@@ -1,0 +1,44 @@
+version: "3.7"
+services:            
+  web:
+    image: asia.gcr.io/${YOUR_PROJECT_ID}/web:${SHORT_HASH}    
+    networks:
+      - my_network        
+    volumes:            
+      - web-source:/app/dist   
+
+  ui-env-parser:
+    image: asia.gcr.io/${YOUR_PROJECT_ID}/ui-env-parser:${SHORT_HASH}  
+    command: ["node", "/app/dist/main.js"]
+    environment:
+      - DIST_DIR=/app/dist-src
+      - WWW_DIR=/tmp/www
+      - VUE_APP_MY_VAR1=${DOCKER_HOST_IP}
+      - VUE_APP_MY_VAR2=WHATEVER2      
+      - BASE_URL=/
+    volumes:    
+      - web-source:/app/dist-src    
+      - nginx-source:/tmp/www
+    depends_on:
+      - web
+    networks:
+      - my_network
+        
+  nginx:
+    image: nginx:1.16
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - nginx-source:/usr/share/nginx/html        
+    networks:
+      - my_network
+    depends_on: 
+      - ui-env-parser       
+
+networks:
+  my_network: 
+
+volumes:   
+  nginx-source:
+  web-source: 
